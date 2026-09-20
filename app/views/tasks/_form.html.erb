@@ -1,0 +1,45 @@
+<%= form_with(model: task, class: "task-form") do |form| %>
+  <% if task.errors.any? %>
+    <div class="errors">
+      <h2><%= pluralize(task.errors.count, "error") %> prevented this task from being saved:</h2>
+      <ul>
+        <% task.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= form.label :title %>
+    <%= form.text_field :title, required: true %>
+  </div>
+
+  <div class="field">
+    <%= form.label :owner %>
+    <%= form.text_field :owner %>
+  </div>
+
+  <div class="field">
+    <%= form.label :status %>
+    <%= form.select :status, Task.statuses.map { |k, _| [k.humanize, k] } %>
+  </div>
+
+  <div class="field">
+    <%= form.label :priority %>
+    <%= form.select :priority, Task.priorities.map { |k, _| [k.humanize, k] } %>
+  </div>
+
+  <div class="field">
+    <%= form.label :due_on, "Due" %>
+    <%= form.date_field :due_on %>
+  </div>
+
+  <div class="field">
+    <%= form.label :description %>
+    <%= form.text_area :description, rows: 6 %>
+  </div>
+
+  <%= form.submit %>
+  <%= link_to "Cancel", task.persisted? ? task_path(task) : tasks_path, class: "link-button" %>
+<% end %>
