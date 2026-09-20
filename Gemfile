@@ -17,7 +17,7 @@ gem "bcrypt", "~> 3.1.7"
 # json 3.x dropped positional-options support in JSON.parse, which breaks the
 # ActiveSupport::JSON.decode used by the session cookie store and metadata.
 # Pin the compatible 2.x line.
-gem "json", "~> 2.21"
+gem "json", "~> 3.0"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
