@@ -1,0 +1,60 @@
+#!/usr/bin/env ruby
+$stdout.sync = true
+
+require_relative "../config/environment"
+
+# DB-backed worker command. Processes Job records persisted in SQLite.
+#
+# Usage:
+#   bin/worker                    # run forever, polling for queued jobs
+#   bin/worker --once             # drain everything currently queued, then exit
+#   bin/worker --once --limit 5   # process at most 5 jobs, then exit
+#   bin/worker --poll 2           # poll interval in seconds (default 1)
+#
+# Output is JSON lines suitable for log ingestion.
+
+options = {
+  once: false,
+  limit: nil,
+  poll: (ENV["WORKER_POLL"] || 1).to_f
+}
+
+args = ARGV.dup
+while (arg = args.shift)
+  case arg
+  when "--once" then options[:once] = true
+  when "--limit"
+    options[:limit] = Integer(args.shift, 10)
+  when "--poll"
+    options[:poll] = Float(args.shift)
+  when "--help", "-h"
+    puts File.read(__FILE__).match(%r{# Usage:\n(.*?)\n\n}m)[1]
+    exit 0
+  else
+    warn "unknown option: #{arg}"
+    exit 1
+  end
+end
+
+processed = 0
+
+loop do
+  job = Job.claim_next
+
+  if job
+    job.process
+    processed += 1
+
+    outcome = job.reload.status
+    puts JSON.generate(worker: "rails", job_id: job.id, name: job.name, outcome: outcome)
+    Rails.logger.info("[worker] job ##{job.id} #{job.name} -> #{outcome}")
+
+    if options[:once] && options[:limit] && processed >= options[:limit]
+      exit 0
+    end
+  elsif options[:once]
+    exit 0
+  else
+    sleep options[:poll]
+  end
+end
